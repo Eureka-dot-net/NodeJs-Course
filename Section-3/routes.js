@@ -1,48 +1,51 @@
 const fs = require('fs');
 
+const requestHandler = (req, res) => {
+  const url = req.url;
+  const method = req.method;
+  if (url === '/') {
+    res.write('<html>');
+    res.write('<head><title>Enter Message</title></head>');
+    res.write(
+      '<body><form action="/message" method="POST"><input type="text" name="message"><button type="submit">Send</button></form></body>'
+    );
+    res.write('</html>');
+    return res.end();
+  }
+  
+  if (url === '/message' && method === 'POST') {
+    const body = [];
+    req.on('data', chunk => {
+      console.log(chunk);
+      body.push(chunk);
+    });
+    return req.on('end', () => {
+      const parsedBody = Buffer.concat(body).toString();
+      const message = parsedBody.split('=')[1];
+      fs.writeFile('message.txt', message, err => {
+        res.statusCode = 302;
+        res.setHeader('Location', '/');
+        return res.end();
+      });
+    });
+  }
+  res.setHeader('Content-Type', 'text/html');
+  res.write('<html>');
+  res.write('<head><title>My First Page</title><head>');
+  res.write('<body><h1>Hello from my Node.js Server!</h1></body>');
+  res.write('</html>');
+  res.end();
+};
 
-const requestHandler = (req, resp) => {
-    const url = req.url;
-    switch (url) {
-        case '/':
-            resp.setHeader('Content-Type', 'text/html');
-            resp.write('<html>');
-            resp.write('<head><title>Enter message</title></head>');
-            resp.write('<body><form action="/message" method="POST"><input type="text" name="message" /><button type="submit">Send</button></form></body>');
-            resp.write('</html>');
-            return resp.end();
-        case '/message':
-            if (req.method === 'POST') {
-                const body = [];
-                req.on('data', (chunk) => {
-                    body.push(chunk);
-                });
-                return req.on('end', () => {
-                    const parsedBody = Buffer.concat(body).toString();
-                    const message = parsedBody.split('=')[1];
-                    fs.writeFile('message.txt', message, (err) => {
-                        if (err) {
-                            console.error('Failed to write message');
-                        } else {
-                            console.log('Finished writing file');
-                            resp.statusCode = 302;
-                            resp.setHeader('Location', '/');
-                            console.log('ending return');
-                            return resp.end();
-                        }
-                    });
+// module.exports = requestHandler;
 
-                })
-            }
-            break;
-        default:
-            resp.setHeader('Content-Type', 'text/html');
-            resp.write('<html>');
-            resp.write('<head><title>My first page</title></head>');
-            resp.write('<body><h1>Hello from my node.js server!</h1></body>');
-            resp.write('</html>');
-            return resp.end();
-    }
-}
+// module.exports = {
+//     handler: requestHandler,
+//     someText: 'Some hard coded text'
+// };
 
-exports = requestHandler
+// module.exports.handler = requestHandler;
+// module.exports.someText = 'Some text';
+
+exports.handler = requestHandler;
+exports.someText = 'Some hard coded text';
