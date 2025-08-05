@@ -1,0 +1,43 @@
+{
+  "compilerOptions": {
+    // Optional: organizes your file structure better (recommended)
+    "rootDir": "./src",
+    "outDir": "./dist",
+
+    // Environment for Node.js with ESM support
+    "module": "NodeNext",       // Ensures proper ESM handling (you already have this — ✅)
+    "target": "ES2020",         // ES2020 is a safe middle ground for Node compatibility
+    "lib": ["ES2020"],          // Includes language features available in Node
+
+
+    // Ensure Node's types (like fs, path, process) are available
+    "types": ["node"],
+
+    // Debug & developer support
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+
+    // Enforce good typing hygiene
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+
+    // Optional: Uncomment these to make your code even cleaner
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+
+    // JSX not needed unless you're using React in this Node project
+    // Remove or move to frontend tsconfig
+    // "jsx": "react-jsx",  
+
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true
+  },
+  "include": ["src"]
+}
