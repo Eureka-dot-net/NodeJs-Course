@@ -1,0 +1,441 @@
+# Section 1: Getting Started
+
+## ✅ What is Node.js?
+
+- Node.js is a runtime environment for executing JavaScript code outside the browser.
+- It uses the V8 JavaScript engine (the same as Google Chrome).
+- Commonly used for building backend services like APIs, web apps, etc.
+
+## ✅ Installing Node.js
+
+- Go to [https://nodejs.org](https://nodejs.org)
+- Download the **LTS (Long-Term Support)** version.
+- Follow the installation steps for your OS.
+
+### Verify installation:
+
+```bash
+node -v
+npm -v
+```
+
+- `node` is the runtime, and `npm` is the Node Package Manager (comes bundled).
+
+## ✅ The Node.js REPL
+
+- REPL = **Read–Eval–Print Loop**
+- It's an interactive shell to quickly run JavaScript/Node code line by line.
+
+### Launch REPL in terminal:
+
+```bash
+node
+```
+
+- Type JavaScript code and press Enter.
+- Press `Ctrl + C` twice to exit.
+
+Example:
+
+```bash
+> 1 + 2
+3
+> const name = "Max"
+undefined
+> name
+'Max'
+```
+
+## ✅ Your First Node.js Script
+
+### Step 1: Create a new project folder
+
+```bash
+mkdir first-node-app
+cd first-node-app
+```
+
+### Step 2: Create a file
+
+```bash
+touch app.js
+```
+
+Or just create `app.js` manually.
+
+### Step 3: Add JavaScript code
+
+```js
+console.log("Hello from Node.js");
+```
+
+### Step 4: Run the file
+
+```bash
+node app.js
+```
+
+You should see:
+
+```
+Hello from Node.js
+```
+
+## ✅ Writing TypeScript Instead
+
+Create `app.ts`:
+
+```ts
+const message: string = "Hello from TypeScript!";
+console.log(message);
+```
+
+### Compile TypeScript:
+
+Install TypeScript globally if not already installed:
+
+```bash
+npm install -g typescript
+```
+
+Compile:
+
+```bash
+tsc app.ts
+```
+
+This creates `app.js`. Run it with Node:
+
+```bash
+node app.js
+```
+
+## ✅ Initializing npm & tsconfig.json
+
+### Step 1: Initialize npm
+
+```bash
+npm init -y
+```
+
+This creates a `package.json` file.
+
+### Step 2: Initialize TypeScript config
+
+```bash
+tsc --init
+```
+
+This creates a `tsconfig.json` file. You can configure it for your needs.
+
+Suggested edits:
+
+```json
+{
+  "target": "ES2020",
+  "module": "CommonJS",
+  "outDir": "./dist",
+  "rootDir": "./src",
+  "strict": true,
+  "esModuleInterop": true
+}
+```
+
+### Step 3: Create folder structure
+
+```bash
+mkdir src
+mv app.ts src/
+```
+
+Compile with:
+
+```bash
+tsc
+```
+
+Run:
+
+```bash
+node dist/app.js
+```
+
+## ✅ Summary
+
+- Node.js allows JavaScript to run outside the browser.
+- TypeScript can be used to write safer and more structured Node.js code.
+- You use `tsc` to compile `.ts` files to `.js`, and run those with `node`.
+
+REPL - Read / Eval / Print / Loop
+
+# Node.js - The Complete Guide (Maximilian Schwarzmüller)
+
+## Section 2: JavaScript Refresher (TypeScript Adapted)
+
+---
+
+### ✅ Function Declarations
+
+**Named function with typed parameters:**
+
+```ts
+function summarizeUser(name: string, surname: string): string {
+    return name + ' ' + surname;
+}
+Arrow function with implicit return:
+
+ts
+Copy
+Edit
+const summarizeUserNoReturn = (name: string, surname: string): string =>
+    name + ' ' + surname;
+Arrow function with block body and explicit return:
+
+ts
+Copy
+Edit
+const summarizeUser = (name: string, surname: string): string => {
+    return name + ' ' + surname;
+};
+✅ Variable Declarations
+ts
+Copy
+Edit
+let name = 'Max';           // mutable
+const surname = 'Smith';    // immutable
+Use let and const instead of var.
+
+let vs const vs var
+Feature	const	let	var
+Scope	Block-scoped	Block-scoped	Function-scoped
+Reassignment allowed	❌ No	✅ Yes	✅ Yes
+Re-declaration in same scope	❌ Error	❌ Error	✅ Allowed
+Hoisted	✅ Yes (TDZ applies)	✅ Yes (TDZ applies)	✅ Yes (no TDZ)
+Temporal Dead Zone (TDZ)	✅ Yes	✅ Yes	❌ No
+Default for modern code	✅ Yes (use when immutable)	✅ Yes (use when mutable)	❌ No (legacy only)
+
+✅ Object with Methods
+ts
+Copy
+Edit
+const Person = {
+    name: 'Max',
+    surname: 'Smith',
+    age: 29,
+
+    fullname() {
+        return this.name + ' ' + this.surname;
+    },
+
+    greet() {
+        console.log('Hi ' + this.name);
+    }
+};
+Use regular functions for object methods to preserve the correct this.
+
+✅ Arrays and Iteration
+ts
+Copy
+Edit
+const hobbies = ['Sports', 'Cooking'];
+Access the last element
+ts
+Copy
+Edit
+console.log(hobbies[hobbies.length - 1]); // 'Cooking'
+for...of loop (preferred for array values)
+ts
+Copy
+Edit
+for (let hobby of hobbies) {
+    console.log(hobby);
+}
+for...in returns indexes — avoid for arrays
+.map() to transform values
+ts
+Copy
+Edit
+console.log(hobbies.map(hobby => 'Hobby' + hobby));
+✅ Spread Operator
+ts
+Copy
+Edit
+const newHobbies = [
+    ...hobbies,
+    'Tennis'
+];
+Spreads elements of hobbies into the new array.
+
+Use to copy or merge arrays.
+
+✅ Rest Parameters
+ts
+Copy
+Edit
+const toArray = (...args: number[]): number[] => {
+    return [...args];
+};
+
+console.log(toArray(1, 2, 3)); // [1, 2, 3]
+Gathers all arguments into an array.
+
+✅ Destructuring
+From objects:
+
+ts
+Copy
+Edit
+const { age } = Person;
+console.log(age); // 29
+From arrays:
+
+ts
+Copy
+Edit
+const [hob1] = hobbies;
+console.log(hob1); // 'Sports'
+❓ How to get the last element?
+Use:
+
+ts
+Copy
+Edit
+const last = hobbies[hobbies.length - 1];
+✅ Destructuring with Function Parameters
+ts
+Copy
+Edit
+const printName = (person: typeof Person) => {
+    const { name } = person;
+    return name;
+};
+
+const printSurname = ({ surname }: typeof Person): string =>
+    'printing ' + surname;
+Destructure in parameter list and annotate the full parameter object.
+
+✅ Promises and Async Code
+Basic promise example:
+
+ts
+Copy
+Edit
+const fetchData = (): Promise<string> => {
+    const promise = new Promise<string>((resolve) => {
+        setTimeout(() => {
+            resolve('Done');
+        }, 1500);
+    });
+    return promise;
+};
+Using the promise:
+
+ts
+Copy
+Edit
+setTimeout(() => {
+    console.log('timer is done');
+    fetchData().then(text => {
+        console.log(text);
+        return fetchData();
+    }).then(text2 => {
+        console.log(text2);
+    });
+}, 2000);
+
+console.log('end of file'); // This shows first
+This shows how JavaScript handles asynchronous execution.
+
+console.log('end of file') runs first due to the event loop.
+
+✅ Arrow Functions Recap
+ts
+Copy
+Edit
+const greet = () => console.log('hi');
+Shorter syntax
+
+No own this binding — don't use for object methods
+
+✅ Callback Typing Example
+ts
+Copy
+Edit
+const fetchData = (callback: (message: string) => void) => {
+    setTimeout(() => {
+        callback('Done');
+    }, 2000);
+};
+callback is a function that takes a string and returns void
+
+✅ Function Types
+ts
+Copy
+Edit
+type CallbackFn = (message: string) => void;
+
+const fetchData = (callback: CallbackFn) => {
+    setTimeout(() => {
+        callback('Done');
+    }, 2000);
+};
+✅ Summary: Key Syntax & Patterns
+let for mutable variables, const for constants
+
+Use for...of to loop array values
+
+Use .map() for transforming arrays
+
+Use spread (...) to copy or merge
+
+Use rest (...args) to gather multiple inputs
+
+Destructure objects/arrays to extract values cleanly
+
+Arrow functions are concise but don’t bind this
+
+Always type parameters and callbacks in TypeScript
+
+Use Promise<T> for asynchronous operations
+
+Node.js Timeline:
+
+1. Start program
+2. Run synchronous (top-level) code
+3. Start event loop:
+   - **Timers phase**
+     - Execute `setTimeout` and `setInterval` callbacks
+   - **Pending callbacks**
+     - Execute deferred I/O callbacks (from operations like TCP errors)
+   - **Poll phase**
+     - Retrieve new I/O events, execute their callbacks
+     - Will block here if nothing is scheduled
+   - **Check phase**
+     - Execute `setImmediate()` callbacks
+   - **Close callbacks**
+     - Execute callbacks for `'close'` events (e.g. from streams/sockets)
+4. Microtasks (run *between* phases)
+   - Execute all `.then()` / `await` promise callbacks
+5. Exit program
+   - If no active timers, callbacks, or open handles (ref count = 0)
+  
+Example:
+// 1. Synchronous
+console.log('Start'); // runs immediately
+
+// 2. Scheduled for later
+setTimeout(() => console.log('Timer'), 0); // goes to timer queue
+
+fs.readFile('file.txt', () => {
+  console.log('File read'); // goes to I/O callback queue
+});
+
+// 3. Still synchronous
+console.log('End'); // runs immediately
+
+// Output:
+Start
+End
+Timer     // (after Poll phase)
+File read // (after Pending Callbacks phase, if applicable)
+
