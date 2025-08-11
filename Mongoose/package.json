@@ -19,11 +19,15 @@
     "connect-flash": "^0.1.1",
     "connect-mongodb-session": "^5.0.0",
     "csurf": "^1.11.0",
+    "dotenv": "^17.2.1",
     "ejs": "^2.6.1",
     "express": "^4.16.3",
     "express-handlebars": "^3.0.0",
     "express-session": "^1.18.2",
     "mongodb": "^6.18.0",
-    "mongoose": "^8.17.1"
+    "mongoose": "^8.17.1",
+    "node-mailjet": "^6.0.9",
+    "nodemailer": "^7.0.5",
+    "nodemailer-sendgrid-transport": "^0.2.0"
   }
 }

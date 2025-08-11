@@ -1,6 +1,7 @@
 const user = require('../models/user');
 const User = require('../models/user');
 const bcrypt = require('bcryptjs');
+const sendEmail = require('../util/mail');
 
 exports.getLogin = (req, res, next) => {
   res.render('auth/login', {
@@ -73,6 +74,14 @@ exports.postSignup = (req, res, next) => {
         password: hashedPassword
       });
       return newUser.save();
+    })
+    .then(() => {
+      sendEmail(
+        email,
+        'Signup succeeded!',
+        'Hello, thanks for signing up!',
+        '<h1>Hello, thanks for signing up!</h1>'
+      )
     })
     .then(result => {
       res.redirect('/login');
