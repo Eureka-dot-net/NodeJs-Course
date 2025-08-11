@@ -3,13 +3,16 @@ const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const sendEmail = require('../util/mail');
 const crypto = require('crypto');
+const { validationResult } = require('express-validator');
 
 exports.getLogin = (req, res, next) => {
   res.render('auth/login', {
     path: '/login',
     pageTitle: 'Login',
     isAuthenticated: false,
-    errorMessage: req.flash('error'), // Pass flash messages to the view
+    errorMessage: req.flash('error'), 
+    oldInput: {},
+    validationErrors: []
   });
 };
 
@@ -19,12 +22,26 @@ exports.getSignup = (req, res, next) => {
     pageTitle: 'Signup',
     isAuthenticated: false,
     errorMessage: req.flash('error'),
+    oldInput: {},
+    validationErrors: []
   });
 };
 
 exports.postLogin = (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
+  const errors = validationResult(req);
+  
+  if (!errors.isEmpty()) {
+    return res.status(422).render('auth/login', {
+    path: '/login',
+    pageTitle: 'Login',
+    isAuthenticated: false,
+    errorMessage: errors.array()[0].msg,
+    oldInput: { email: email, password: password },
+    validationErrors: errors.array()
+  })};
+
   let loadedUser;
 
   User.findOne({ email: email })
@@ -59,17 +76,22 @@ exports.postLogin = (req, res, next) => {
 exports.postSignup = (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
-  const confirmPassword = req.body.confirmPassword;
-
-  User.findOne({ email: email })
-    .then(user => {
-      if (user) {
-        req.flash('error', 'User already exists!'); // Use flash to pass error message
-        res.redirect('/signup');
-        return Promise.reject();
-      }
-      return bcrypt.hash(password, 12)
-    }).then(hashedPassword => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).render('auth/signup', {
+    path: '/signup',
+    pageTitle: 'Signup',
+    isAuthenticated: false,
+    errorMessage: errors.array()[0].msg,
+    oldInput: { email: email,
+      password: password,
+      confirmPassword: req.body.confirmPassword
+    },
+    validationErrors: errors.array()
+  });
+  }
+  bcrypt.hash(password, 12)
+    .then(hashedPassword => {
       const newUser = new User({
         email: email,
         password: hashedPassword
