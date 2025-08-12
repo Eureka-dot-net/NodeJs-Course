@@ -10,7 +10,7 @@ exports.getLogin = (req, res, next) => {
     path: '/login',
     pageTitle: 'Login',
     isAuthenticated: false,
-    errorMessage: req.flash('error'), 
+    errorMessage: req.flash('error'),
     oldInput: {},
     validationErrors: []
   });
@@ -31,16 +31,17 @@ exports.postLogin = (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
   const errors = validationResult(req);
-  
+
   if (!errors.isEmpty()) {
     return res.status(422).render('auth/login', {
-    path: '/login',
-    pageTitle: 'Login',
-    isAuthenticated: false,
-    errorMessage: errors.array()[0].msg,
-    oldInput: { email: email, password: password },
-    validationErrors: errors.array()
-  })};
+      path: '/login',
+      pageTitle: 'Login',
+      isAuthenticated: false,
+      errorMessage: errors.array()[0].msg,
+      oldInput: { email: email, password: password },
+      validationErrors: errors.array()
+    })
+  };
 
   let loadedUser;
 
@@ -68,7 +69,9 @@ exports.postLogin = (req, res, next) => {
       });
     })
     .catch(err => {
-      if (err) console.log(err); // Will log only real errors
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(error);
     });
 
 };
@@ -79,16 +82,17 @@ exports.postSignup = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(422).render('auth/signup', {
-    path: '/signup',
-    pageTitle: 'Signup',
-    isAuthenticated: false,
-    errorMessage: errors.array()[0].msg,
-    oldInput: { email: email,
-      password: password,
-      confirmPassword: req.body.confirmPassword
-    },
-    validationErrors: errors.array()
-  });
+      path: '/signup',
+      pageTitle: 'Signup',
+      isAuthenticated: false,
+      errorMessage: errors.array()[0].msg,
+      oldInput: {
+        email: email,
+        password: password,
+        confirmPassword: req.body.confirmPassword
+      },
+      validationErrors: errors.array()
+    });
   }
   bcrypt.hash(password, 12)
     .then(hashedPassword => {
@@ -110,7 +114,9 @@ exports.postSignup = (req, res, next) => {
       res.redirect('/login');
     })
     .catch(err => {
-      if (err) console.log(err); // Will log only real errors
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(error);
     });
 };
 
@@ -158,9 +164,18 @@ exports.postReset = (req, res, next) => {
             req.flash('info', 'Check your email for the reset link.');
             res.redirect('/');
           })
-          .catch(err => console.log(err));
+          .catch(err => {
+            const error = new Error(err);
+            error.httpStatusCode = 500;
+            return next(error);
+          });
       })
-      .catch(err => console.log(err));
+      .catch(err => {
+      const error = new Error(err);
+
+      error.httpStatusCode = 500;
+      return next(error);
+    });
   });
 }
 
@@ -184,7 +199,11 @@ exports.getNewPassword = (req, res, next) => {
         passwordToken: token,
       })
     })
-    .catch(err => console.log(err));
+    .catch(err => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(error);
+    });
 }
 
 exports.postNewPassword = (req, res, next) => {
@@ -218,6 +237,8 @@ exports.postNewPassword = (req, res, next) => {
       res.redirect('/login');
     })
     .catch(err => {
-      if (err) console.log(err); // Will log only real errors
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(error);
     });
 }

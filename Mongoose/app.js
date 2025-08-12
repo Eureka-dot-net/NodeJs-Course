@@ -33,9 +33,9 @@ const authRoutes = require('./routes/auth');
 app.use(bodyParser.urlencoded({ extended: false }));
 // Parse incoming request bodies in a middleware before your handlers, available under the req.body property
 // extended: false means that the body will only contain strings or arrays, not objects
-app.use(express.static(path.join(__dirname, 'public'))); 
+app.use(express.static(path.join(__dirname, 'public')));
 // Serve static files from the public directory
-app.use(session({secret: 'my secret should be long', resave: false, saveUninitialized: false, store: store}));
+app.use(session({ secret: 'my secret should be long', resave: false, saveUninitialized: false, store: store }));
 //resave : false = do not save session if nothing changed
 //saveUninitialized : false = do not save session if it is new but not modified
 
@@ -45,28 +45,45 @@ app.use(csrfProtection);
 app.use(flash());
 
 app.use((req, res, next) => {
-  if (!req.session.user) {
-    return next();
-  }
-  User.findById(req.session.user._id)
-    .then(user => {
-      req.user = user;
-      next();
-    })
-    .catch(err => console.log(err));
-});
-
-app.use((req, res, next) => {
   res.locals.isAuthenticated = req.session.isLoggedIn;
   res.locals.csrfToken = req.csrfToken(); // Make CSRF token available in views
   next();
 })
 
+app.use((req, res, next) => {
+  if (!req.session.user) {
+    return next();
+  }
+  User.findById(req.session.user._id)
+    .then(user => {
+      if (!user) {
+        return next();
+      }
+      req.user = user;
+      next();
+    })
+    .catch(err => {
+      next(err);
+    });
+});
+
+
+
 app.use('/admin', adminRoutes);
 app.use(shopRoutes);
 app.use(authRoutes);
 
+app.get('/500', errorController.get500);
+
 app.use(errorController.get404);
+
+app.use((error, req, res, next) => {
+  res.status(error.httpStatusCode || 500);
+  res.status(500).render('500', {
+    pageTitle: 'Error Occurred',
+    path: '/500'
+  });
+});
 
 mongoose
   .connect(
@@ -76,5 +93,7 @@ mongoose
     app.listen(3000);
   })
   .catch(err => {
-    console.log(err);
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+    return next(error);
   });
