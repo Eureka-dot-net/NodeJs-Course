@@ -8,6 +8,7 @@ const session = require('express-session');
 const MongoDBStore = require('connect-mongodb-session')(session);
 const csrf = require('csurf');
 const flash = require('connect-flash');
+const multer = require('multer');
 
 const errorController = require('./controllers/error');
 const User = require('./models/user');
@@ -21,7 +22,27 @@ const store = new MongoDBStore({
 })
 const csrfProtection = csrf();
 
+const fileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'images'); // Store uploaded files in the 'images' directory
+  },
+  filename: (req, file, cb) => {
+    const timestamp = new Date().toISOString().replace(/:/g, '-');
+    cb(null, timestamp + '-' + file.originalname); // Use a timestamp to avoid filename conflicts
+  } 
+});
 
+const fileFilter = (req, file, cb) => {
+  if (
+    file.mimetype === 'image/png' ||
+    file.mimetype === 'image/jpg' ||
+    file.mimetype === 'image/jpeg'  
+  ) {
+    cb(null, true); // Accept the file
+  } else {
+    cb(null, false); // Reject the file
+  }
+}
 
 app.set('view engine', 'ejs');
 app.set('views', 'views');
@@ -34,7 +55,12 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // Parse incoming request bodies in a middleware before your handlers, available under the req.body property
 // extended: false means that the body will only contain strings or arrays, not objects
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'images')));
 // Serve static files from the public directory
+app.use(multer({ storage: fileStorage, fileFilter: fileFilter }).single('image'));
+// Use multer to handle file uploads, expecting a single file with the field name 'image'
+app.use('/images', express.static(path.join(__dirname, 'images')));
+// Serve static files from the images directory
 app.use(session({ secret: 'my secret should be long', resave: false, saveUninitialized: false, store: store }));
 //resave : false = do not save session if nothing changed
 //saveUninitialized : false = do not save session if it is new but not modified
@@ -81,7 +107,9 @@ app.use((error, req, res, next) => {
   res.status(error.httpStatusCode || 500);
   res.status(500).render('500', {
     pageTitle: 'Error Occurred',
-    path: '/500'
+    path: '/500',
+     isAuthenticated: req.session ? req.session.isLoggedIn : false,
+    csrfToken: req.csrfToken ? req.csrfToken() : ''
   });
 });
 
