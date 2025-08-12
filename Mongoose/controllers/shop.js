@@ -5,21 +5,43 @@ const PDFDocument = require('pdfkit');
 const Product = require('../models/product');
 const Order = require('../models/order');
 
+const ITEMS_PER_PAGE = 10; // Define how many items to show per page
+
 exports.getProducts = (req, res, next) => {
-  Product.find()
-    .then(products => {
-      console.log(products);
-      res.render('shop/product-list', {
-        prods: products,
-        pageTitle: 'All Products',
-        path: '/products'
-      });
+  const page = req.query.page || 1;
+  let totalItems;
+  let totalPages;
+
+  Product.countDocuments()
+    .then(numProducts => {
+      totalItems = numProducts;
+      totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+      if (page < 1 || page > totalPages) {
+        return res.redirect('/?page=1'); // Redirect to the first page if out of bounds
+      }
+
+      return Product.find()
+        .skip((page - 1) * ITEMS_PER_PAGE) // Skip items for pagination
+        .limit(ITEMS_PER_PAGE) // Limit items per page
+        .then(products => {
+          res.render('shop/product-list', {
+            prods: products,
+            pageTitle: 'Products',
+            path: '/products', 
+            totalProducts: totalItems,
+            currentPage: page,
+            hasNextPage: ITEMS_PER_PAGE * page < totalItems,
+            nextPage: parseInt(page) + 1,
+            hasPreviousPage: page > 1,
+            previousPage: page - 1,
+            totalPages:  totalPages
+            
+          });
+        })
+        .catch(err => {
+          console.log(err);
+        });
     })
-    .catch(err => {
-      const error = new Error(err);
-      error.httpStatusCode = 500;
-      return next(error);
-    });
 };
 
 exports.getProduct = (req, res, next) => {
@@ -40,17 +62,40 @@ exports.getProduct = (req, res, next) => {
 };
 
 exports.getIndex = (req, res, next) => {
-  Product.find()
-    .then(products => {
-      res.render('shop/index', {
-        prods: products,
-        pageTitle: 'Shop',
-        path: '/', // Pass CSRF token to the view
-      });
+  const page = req.query.page || 1;
+  let totalItems;
+  let totalPages;
+
+  Product.countDocuments()
+    .then(numProducts => {
+      totalItems = numProducts;
+      totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+      if (page < 1 || page > totalPages) {
+        return res.redirect('/?page=1'); // Redirect to the first page if out of bounds
+      }
+
+      return Product.find()
+        .skip((page - 1) * ITEMS_PER_PAGE) // Skip items for pagination
+        .limit(ITEMS_PER_PAGE) // Limit items per page
+        .then(products => {
+          res.render('shop/index', {
+            prods: products,
+            pageTitle: 'Shop',
+            path: '/', // Pass CSRF token to the view
+            totalProducts: totalItems,
+            currentPage: page,
+            hasNextPage: ITEMS_PER_PAGE * page < totalItems,
+            nextPage: parseInt(page) + 1,
+            hasPreviousPage: page > 1,
+            previousPage: page - 1,
+            totalPages:  totalPages
+            
+          });
+        })
+        .catch(err => {
+          console.log(err);
+        });
     })
-    .catch(err => {
-      console.log(err);
-    });
 };
 
 exports.getCart = (req, res, next) => {
@@ -168,9 +213,9 @@ exports.getInvoice = (req, res, next) => {
           .fontSize(14)
           .text(
             prod.product.title +
-              ' - ' +
-              prod.quantity + ' x $' +
-              prod.product.price
+            ' - ' +
+            prod.quantity + ' x $' +
+            prod.product.price
           );
       });
       pdfDoc.text('-------------------------');
