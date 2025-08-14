@@ -50,6 +50,26 @@ app.use('/feed', feedRoutes);
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
 
+// 1. Global Promise Rejection Handler
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ UNHANDLED PROMISE REJECTION:');
+  console.error('Promise:', promise);
+  console.error('Reason:', reason);
+  
+  // Optional: Exit the process (recommended for production)
+  // process.exit(1);
+});
+
+// 2. Global Exception Handler  
+process.on('uncaughtException', (error) => {
+  console.error('❌ UNCAUGHT EXCEPTION:');
+  console.error(error);
+  
+  // Graceful shutdown
+  process.exit(1);
+});
+
+
 app.use((error, req, res, next) => {
   console.log(error);
   const status = error.statusCode || 500;
@@ -57,12 +77,57 @@ app.use((error, req, res, next) => {
   res.status(status).json({message: message})
 })
 
+let server;
+
 mongoose.connect(dbUrl)
   .then(() => {
-    app.listen(port, () => {
+    server = app.listen(port, () => {
       console.log(`Server is running on http://localhost:${port}`);
     })
   })
   .catch(err => {
     console.error('Database connection error:', err);
   });
+
+ // Graceful shutdown function
+const gracefulShutdown = (signal) => {
+  console.log(`\n👋 ${signal} received. Shutting down gracefully...`);
+  
+  // 1. Stop accepting new requests
+  if (server) {
+    server.close((err) => {
+      if (err) {
+        console.error('❌ Error closing server:', err);
+        return process.exit(1);
+      }
+      console.log('✅ HTTP server closed');
+      
+      // 2. Close database connection
+      mongoose.connection.close((err) => {
+        if (err) {
+          console.error('❌ Error closing database:', err);
+          return process.exit(1);
+        }
+        console.log('✅ Database connection closed');
+        console.log('👋 Process exited cleanly');
+        process.exit(0);
+      });
+    });
+  } else {
+    // If server isn't running, just close database
+    mongoose.connection.close(() => {
+      console.log('✅ Database connection closed');
+      process.exit(0);
+    });
+  }
+  
+  // Fallback: Force exit after 10 seconds
+  setTimeout(() => {
+    console.error('❌ Forced shutdown after timeout');
+    process.exit(1);
+  }, 10000);
+};
+
+// Listen for shutdown signals
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT')); // Ctrl+C
