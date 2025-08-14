@@ -1,0 +1,49 @@
+.feed__status {
+  width: 90%;
+  margin: 1rem auto;
+}
+
+.feed__status form {
+  display: flex;
+  align-items: center;
+}
+
+.feed__status form * {
+  margin: 0 0.5rem;
+}
+
+.feed__control {
+  text-align: center;
+}
+
+.new-post__preview-image {
+  width: 15rem;
+  height: 7rem;
+}
+
+/* Ensure the new post modal is scrollable on small screens */
+.new-post {
+  max-height: 90vh;        /* Never taller than viewport */
+  overflow-y: auto;        /* Scroll inside modal if content overflows */
+  padding-bottom: 1rem;    /* Space for buttons at bottom */
+  box-sizing: border-box;
+}
+
+/* If the form is the main modal content, make it stack vertically */
+.new-post form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Actions/buttons container */
+.new-post__actions {
+  margin-top: auto;        /* Push buttons to bottom if possible */
+  padding-top: 1rem;
+}
+
+@media (min-width: 768px) {
+  .feed__status {
+    width: 30rem;
+  }
+}
