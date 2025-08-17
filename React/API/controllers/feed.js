@@ -2,6 +2,7 @@ const { validationResult } = require('express-validator');
 const fs = require('fs');
 const path = require('path');
 
+const io = require('../socket');
 const Post = require('../models/post');
 const User = require('../models/user');
 
@@ -17,7 +18,8 @@ exports.getPosts = async (req, res, next) => {
     const count = await Post.find().countDocuments();
     const posts = await Post.find().populate('creator')
       .skip((currentPage - 1) * perPage)
-      .limit(perPage);
+      .limit(perPage)
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
       posts: posts,
@@ -31,7 +33,7 @@ exports.getPosts = async (req, res, next) => {
 // ✅ Fixed: Converted to async/await for consistency
 exports.getPost = async (req, res, next) => {
   const postId = req.params.postId;
-  
+
   try {
     const post = await Post.findById(postId);
     if (!post) {
@@ -39,7 +41,7 @@ exports.getPost = async (req, res, next) => {
       error.statusCode = 404;
       throw error;
     }
-    
+
     res.status(200).json({
       post: post
     });
@@ -73,6 +75,14 @@ exports.createPost = async (req, res, next) => {
     user.posts.push(createdPost);
     await user.save();
 
+    io.getIO().emit('posts', {
+      action: 'create',
+      post: {
+        ...createdPost.toObject(), // ✅ Convert to plain object first
+        creator: { _id: req.userId, name: user.name }
+      }
+    });
+
     res.status(201).json({
       message: 'Post created successfully',
       post: createdPost,
@@ -92,7 +102,7 @@ exports.updatePost = async (req, res, next) => {
   if (!errors.isEmpty()) {
     return res.status(422).json({ message: "Validation failed", errors: errors.array() });
   }
-  
+
   let imageUrl = req.body.image;
   if (req.file) {
     imageUrl = req.file.path.replace(/\\/g, "/");
@@ -100,30 +110,34 @@ exports.updatePost = async (req, res, next) => {
   if (!imageUrl) {
     return res.status(422).json({ message: "No image provided" });
   }
-  
+
   const { title, content } = req.body;
 
   try {
-    const post = await Post.findById(postId);
+    const post = await Post.findById(postId).populate('creator');
 
     if (!post) {
       return res.status(404).json({ message: 'Post not found.' });
     }
-    
+
     const creatorId = post.creator._id || post.creator;
     if (!creatorId.equals(req.userId)) {
       return res.status(403).json({ message: 'Not authorized.' });
     }
-    
+
     if (imageUrl !== post.imageUrl) {
       clearImage(post.imageUrl);
     }
-    
+
     post.title = title;
     post.content = content;
     post.imageUrl = imageUrl;
     const updatedPost = await post.save();
 
+    io.getIO().emit('posts', {
+      action: 'update',
+      post: updatedPost.toObject()
+    });
     // ✅ Fixed: Correct message and status code
     res.status(200).json({
       message: 'Post updated successfully',
@@ -154,15 +168,19 @@ exports.deletePost = async (req, res, next) => {
 
     clearImage(post.imageUrl);
     await Post.findByIdAndDelete(postId);
-    
+
     // ✅ Fixed: Remove post from user's posts array
     const user = await User.findById(req.userId);
     user.posts.pull(postId);
     await user.save();
-    
+
+    io.getIO().emit('posts', {
+      action: 'delete',
+      postId: postId
+    });
     // ✅ Fixed: Send response
     res.status(200).json({ message: 'Post deleted successfully.' });
-    
+
   } catch (err) {
     if (!err.statusCode) {
       err.statusCode = 500;

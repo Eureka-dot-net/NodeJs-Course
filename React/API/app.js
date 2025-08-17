@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const path = require('path');
 const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
+const http = require('http');
 
 require('dotenv').config()
 
@@ -20,7 +21,7 @@ const fileStorage = multer.diskStorage({
     cb(null, 'data/images');
   },
   filename: (req, file, cb) => {
-    cb(null, uuidv4() + '-' + file.originalname )
+    cb(null, uuidv4() + '-' + file.originalname)
   }
 })
 
@@ -28,23 +29,26 @@ const fileFilter = (req, file, cb) => {
   if (file.mimetype === 'image/png' ||
     file.mimetype === 'image/png' ||
     file.mimetype === 'image/png') {
-      cb(null, true);
-    } else {
-      cb(null, false);
-    }
+    cb(null, true);
+  } else {
+    cb(null, false);
+  }
 }
 
 app.use(bodyParser.json());
-app.use(multer({storage: fileStorage, fileFilter: fileFilter}).single('image'))
+app.use(multer({ storage: fileStorage, fileFilter: fileFilter }).single('image'))
 
-app.use( '/data', express.static(path.join(__dirname, 'data')));
+app.use('/data', express.static(path.join(__dirname, 'data')));
 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
   next();
 });
+
+
 
 app.use('/feed', feedRoutes);
 app.use('/auth', authRoutes);
@@ -55,7 +59,7 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('❌ UNHANDLED PROMISE REJECTION:');
   console.error('Promise:', promise);
   console.error('Reason:', reason);
-  
+
   // Optional: Exit the process (recommended for production)
   // process.exit(1);
 });
@@ -64,7 +68,7 @@ process.on('unhandledRejection', (reason, promise) => {
 process.on('uncaughtException', (error) => {
   console.error('❌ UNCAUGHT EXCEPTION:');
   console.error(error);
-  
+
   // Graceful shutdown
   process.exit(1);
 });
@@ -74,25 +78,46 @@ app.use((error, req, res, next) => {
   console.log(error);
   const status = error.statusCode || 500;
   const message = error.message;
-  res.status(status).json({message: message})
+  res.status(status).json({ message: message })
 })
 
 let server;
 
 mongoose.connect(dbUrl)
   .then(() => {
-    server = app.listen(port, () => {
+    // ✅ Create server but don't listen yet
+    server = require('http').createServer(app);
+    
+    // ✅ Initialize Socket.IO immediately
+    const io = require('./socket').init(server);
+    
+    io.on('connection', socket => {
+      console.log('✅ New client connected:', socket.id);
+      
+      // Test message
+      socket.emit('test', { 
+        message: 'Hello from server!',
+        timestamp: new Date().toISOString()
+      });
+
+      socket.on('disconnect', () => {
+        console.log('❌ Client disconnected:', socket.id);
+      });
+    });
+    
+    // ✅ Now start listening
+    server.listen(port, () => {
       console.log(`Server is running on http://localhost:${port}`);
-    })
+    });
   })
   .catch(err => {
     console.error('Database connection error:', err);
   });
 
- // Graceful shutdown function
+// Graceful shutdown function
 const gracefulShutdown = (signal) => {
   console.log(`\n👋 ${signal} received. Shutting down gracefully...`);
-  
+
   // 1. Stop accepting new requests
   if (server) {
     server.close((err) => {
@@ -101,7 +126,7 @@ const gracefulShutdown = (signal) => {
         return process.exit(1);
       }
       console.log('✅ HTTP server closed');
-      
+
       // 2. Close database connection
       mongoose.connection.close((err) => {
         if (err) {
@@ -120,7 +145,7 @@ const gracefulShutdown = (signal) => {
       process.exit(0);
     });
   }
-  
+
   // Fallback: Force exit after 10 seconds
   setTimeout(() => {
     console.error('❌ Forced shutdown after timeout');
